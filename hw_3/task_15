@@ -1,0 +1,5 @@
+lst=[4, 5, 8, 10, 12, 25, 28, 30, 33, 45]
+divisible=[]
+for num in lst:
+    divisible.append(num%5==0)
+print(divisible)

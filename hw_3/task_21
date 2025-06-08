@@ -1,0 +1,13 @@
+data = [
+    {"rollerskates": 3, "bicycle": 5},
+    {"skateboard": 2, "skies": 4},
+    {"rollerskates": 7, "bicycle": 1}
+]
+aggregated={}
+for item in data:
+    for key, value in item.items():
+        if key in aggregated:
+            aggregated[key] += value
+        else:
+            aggregated[key] = value
+print(aggregated)
