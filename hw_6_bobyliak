@@ -1,0 +1,74 @@
+import yfinance
+import pandas as pd
+import matplotlib.pyplot as plt
+try:
+  btc = yfinance.Ticker("BTC-USD")
+  hist_data = btc.history(period="5y")
+except ValueError:
+  print ("Дані не завантажено. Перевірте назву інструменту або з'єднання")
+
+df = pd.DataFrame(hist_data[["Open", "High", "Low", "Close", "Volume"]])
+# display (df)
+# display (df)
+
+MA_short = 20
+MA_long = 50
+
+df["MovAvg_20"] = df["Close"].rolling(window=MA_short).mean()
+df["MovAvg_50"] = df["Close"].rolling(window=MA_long).mean()
+df.dropna(inplace=True)
+# display (df)
+
+df["Signal"] = 0
+df.loc[df["MovAvg_20"] > df["MovAvg_50"], "Signal"] = 1
+df.loc[df["MovAvg_20"] < df["MovAvg_50"], "Signal"] = -1
+# 1-купити;
+# -1-продати;
+# 0-утримувати
+display (df)
+
+df["Market Return"] = df["Close"].pct_change()
+df["Strategy Return"] = df["Market Return"] * df["Signal"].shift(1)
+
+initial_cash = 10000
+df["Strategy Equity"] = (1 + df["Strategy Return"]).cumprod() * initial_cash
+df["Buy and Hold"] = (1 + df["Market Return"]).cumprod() * initial_cash
+
+print("Strategy final equity:", df["Strategy Equity"].iloc[-1])
+print("Buy & Hold final equity:", df["Buy and Hold"].iloc[-1])
+
+buy_signals = df[(df["Signal"] == 1) & (df["Signal"].shift(1) != 1)]
+sell_signals = df[(df["Signal"] == -1) & (df["Signal"].shift(1) != -1)]
+
+plt.figure(figsize=(20, 10))
+plt.plot(df.index, df["Strategy Equity"], label="Strategy Equity", color="blue")
+plt.plot(df.index, df["Buy and Hold"], label="Buy and Hold", color="green")
+
+plt.scatter(buy_signals.index, df.loc[buy_signals.index, "Strategy Equity"], marker="^", color="green", label="Buy Signal")
+
+plt.scatter(sell_signals.index, df.loc[sell_signals.index, "Strategy Equity"], marker="v", color="red", label="Sell Signal")
+
+plt.title("Стратегія: точки входу та виходу")
+plt.xlabel("Дата")
+plt.ylabel("Баланс")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+
+plt.figure(figsize=(20, 10))
+plt.plot(df.index, df["Close"], label="Ціна BTC", color="black")
+plt.plot(df.index, df["MovAvg_20"], label="MA 20", color="green", linestyle="--")
+plt.plot(df.index, df["MovAvg_50"], label="MA 50", color="red", linestyle="--")
+
+plt.scatter(buy_signals.index, df.loc[buy_signals.index, "Close"], marker="^", color="green", label="Buy Signal", s=100)
+plt.scatter(sell_signals.index, df.loc[sell_signals.index, "Close"], marker="v", color="red", label="Sell Signal", s=100)
+
+plt.title("Сигнали BTC")
+plt.xlabel("Дата")
+plt.ylabel("Ціна")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
